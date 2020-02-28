@@ -10,7 +10,6 @@ class NeuralNet(nn.Module):
         self.input_size = input_size
         self.hidden_size = input_size
         self.number_of_classes = number_of_classes
-        print(number_of_classes)
 
         # Hidden layer
         self.fc1 = nn.Linear(self.input_size,self.hidden_size)
@@ -35,7 +34,7 @@ if __name__ == "__main__":
     x,y = get_model_data(data)
     x_train,x_test,y_train, y_test = split_data(x.values,y.values)
     input_size = x_train.shape[1]
-    hidden_size = 10
+    hidden_size = 100
     no_of_classes = 6
     x_train,x_test,y_train,y_test = torch.FloatTensor(x_train),torch.FloatTensor(x_test), torch.as_tensor(y_train),torch.as_tensor(y_test)
     y_train, y_test = torch.argmax(y_train, dim=1), torch.argmax(y_test, dim=1)
@@ -64,12 +63,15 @@ if __name__ == "__main__":
         y_pred = model(x_train)
         loss = criterion(y_pred.squeeze(),y_train)
         
-        print('Epoch {}: train loss: {}'.format(epoch, loss.item()))    # Backward pass
+        if epoch % 100 == 0:
+            print('Epoch {}: train loss: {}'.format(epoch, loss.item()))    # Backward pass
         loss.backward()
         optimizer.step()
+
     i = 200
-    print(model(x_test[i]))
+    print(model(x_test[i]).argmax())
     print(y_test[i])
+    
 
     
 
