@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
+from ignite.metrics import Accuracy, Loss
 from data import get_model_data, read_data, split_data, RED_WINE_PATH, WHITE_WINE_PATH
 
 
@@ -33,12 +35,10 @@ class NeuralNet(nn.Module):
         x = torch.log_softmax(x, dim=1)
         return x
 
-    def accuracy(self):
-        pass
 
-    def get_activated_class_idx(self, tensor):
-        value, index = tensor.max(0)
-        return index
+
+def run():
+    pass 
 
 
 def train():
