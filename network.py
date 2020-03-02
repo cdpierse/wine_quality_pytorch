@@ -34,7 +34,7 @@ class NeuralNet(nn.Module):
         x = self.fc3(x)
 
         # # output
-        # x = torch.log_softmax(x, dim=1)
+        x = torch.log_softmax(x, dim=1)
         return x
 
 
@@ -48,23 +48,25 @@ def run():
     classes = wd.number_of_classes
     model = NeuralNet(wd.x_data.shape[1], 200, classes)
     train_loader = DataLoader(dataset=wd, batch_size=124, shuffle=True, num_workers=0)
-    test_loader = DataLoader(dataset=wd_test,batch_size=124, shuffle=True, num_workers=0)
+    test_loader = DataLoader(
+        dataset=wd_test, batch_size=124, shuffle=True, num_workers=0
+    )
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.001)
-    criterion = torch.nn.CrossEntropyLoss()
+    criterion = torch.nn.NLLLoss()
 
-    max_epochs = 500
+    max_epochs = 200
 
     trainer = create_supervised_trainer(model, optimizer, criterion)
     evaluator = create_supervised_evaluator(
         model, metrics={"accuracy": Accuracy(), "nll": Loss(criterion)}
     )
 
-    @trainer.on(Events.EPOCH_COMPLETED(every=10))
+    @trainer.on(Events.EPOCH_COMPLETED(every=50))
     def log_training_loss(trainer):
         print(f"Epoch[{trainer.state.epoch}] Loss:[{round(trainer.state.output,2)}]")
 
-    @trainer.on(Events.EPOCH_COMPLETED(every=10))
+    @trainer.on(Events.EPOCH_COMPLETED(every=50))
     def log_training_results(trainer):
         evaluator.run(train_loader)
         metrics = evaluator.state.metrics
@@ -84,9 +86,9 @@ def run():
     #         )
     #     )
 
-
     trainer.run(train_loader, max_epochs=max_epochs)
-    evaluator.run(test_loader)
+   
+    return model
 
 
 if __name__ == "__main__":
