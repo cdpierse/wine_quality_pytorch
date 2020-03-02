@@ -3,7 +3,7 @@ import torch.nn as nn
 from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
 from ignite.metrics import Accuracy, Loss
 from ignite.contrib.handlers.tqdm_logger import ProgressBar
-from data import WineData, RED_WINE_PATH, WHITE_WINE_PATH
+from data_model import WineData, RED_WINE_PATH, WHITE_WINE_PATH
 from torch.utils.data import Dataset, DataLoader
 
 
