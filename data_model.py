@@ -19,6 +19,7 @@ def scale_data(x):
 
 
 class WineData(Dataset):
+    
     def __init__(self, data: pd.DataFrame):
         """Initializes an instance of WineData dataset. 
         Data is split into x and y and then converted from 
@@ -106,13 +107,14 @@ class WineData(Dataset):
 
 
 if __name__ == "__main__":
+    pass
 
-    data = WineData.read_data(WHITE_WINE_PATH)
-    train_data, test_data = WineData.train_test_splitter(data)
-    wd = WineData(train_data)
-    train_loader = DataLoader(dataset=wd, batch_size=32, shuffle=True, num_workers=2)
-    epochs = 10
-    for epoch in range(epochs):
-        for item in train_loader:
-            x, y = item
-            break
+    # data = WineData.read_data(RED_WINE_PATH)
+    # train_data, test_data = WineData.train_test_splitter(data)
+    # wd = WineData(train_data)
+    # train_loader = DataLoader(dataset=wd, batch_size=32, shuffle=True, num_workers=2)
+    # epochs = 10
+    # for epoch in range(epochs):
+    #     for item in train_loader:
+    #         x, y = item
+    #         break

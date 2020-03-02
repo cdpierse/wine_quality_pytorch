@@ -3,7 +3,7 @@ import torch.nn as nn
 from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
 from ignite.metrics import Accuracy, Loss
 from ignite.contrib.handlers.tqdm_logger import ProgressBar
-from data import WineData, RED_WINE_PATH, WHITE_WINE_PATH
+from data_model import WineData, RED_WINE_PATH, WHITE_WINE_PATH
 from torch.utils.data import Dataset, DataLoader
 
 
@@ -24,7 +24,7 @@ class NeuralNet(nn.Module):
     def forward(self, x):
         # l1
         x = self.fc1(x)
-        x = self.relu(x)
+        # x = self.relu(x)
 
         # # l2
         x = self.fc2(x)
@@ -41,36 +41,55 @@ class NeuralNet(nn.Module):
 def run():
     data = WineData.read_data(WHITE_WINE_PATH)
     train_data, test_data = WineData.train_test_splitter(data)
-    wd = WineData(train_data)
-    weights = wd.class_weights
-    classes = wd.number_of_classes
-    model = NeuralNet(wd.x_data.shape[1], 150, classes)
-    train_loader = DataLoader(dataset=wd, batch_size=124, shuffle=True, num_workers=2)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    criterion = torch.nn.CrossEntropyLoss(weight=weights)
 
-    max_epochs = 300
+    wd = WineData(train_data)
+    wd_test = WineData(test_data)
+
+    classes = wd.number_of_classes
+    model = NeuralNet(wd.x_data.shape[1], 200, classes)
+    train_loader = DataLoader(dataset=wd, batch_size=124, shuffle=True, num_workers=0)
+    test_loader = DataLoader(
+        dataset=wd_test, batch_size=124, shuffle=True, num_workers=0
+    )
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.001)
+    criterion = torch.nn.CrossEntropyLoss()
+
+    max_epochs = 200
 
     trainer = create_supervised_trainer(model, optimizer, criterion)
     evaluator = create_supervised_evaluator(
         model, metrics={"accuracy": Accuracy(), "nll": Loss(criterion)}
     )
 
-    @trainer.on(Events.EPOCH_COMPLETED)
+    @trainer.on(Events.EPOCH_COMPLETED(every=50))
     def log_training_loss(trainer):
         print(f"Epoch[{trainer.state.epoch}] Loss:[{round(trainer.state.output,2)}]")
 
-    @trainer.on(Events.EPOCH_COMPLETED)
+    @trainer.on(Events.EPOCH_COMPLETED(every=50))
     def log_training_results(trainer):
         evaluator.run(train_loader)
         metrics = evaluator.state.metrics
         print(
-            "Training Results - Epoch: {}  Avg accuracy: {:.2f} Avg loss: {:.2f}".format(
+            "EVALUATOR: Training Results - Epoch: {}  Avg accuracy: {:.2f} Avg loss: {:.4f}".format(
                 trainer.state.epoch, metrics["accuracy"], metrics["nll"]
             )
         )
 
+    # @evaluator.on(Events.EPOCH_COMPLETED)
+    # def log_test_results(evaluator):
+    #     metrics = evaluator.state.metrics
+
+    #     print(
+    #         "EVALUATOR: Training Results - Epoch: {}  Avg accuracy: {:.2f} Avg loss: {:.4f}".format(
+    #             evaluator.state.epoch, metrics["accuracy"], metrics["nll"]
+    #         )
+    #     )
+
     trainer.run(train_loader, max_epochs=max_epochs)
+   
+    return model
+
 
 if __name__ == "__main__":
     run()
