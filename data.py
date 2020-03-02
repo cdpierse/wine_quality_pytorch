@@ -19,6 +19,7 @@ def scale_data(x):
 
 
 class WineData(Dataset):
+    
     def __init__(self, data: pd.DataFrame):
         """Initializes an instance of WineData dataset. 
         Data is split into x and y and then converted from 

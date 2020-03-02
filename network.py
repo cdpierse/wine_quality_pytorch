@@ -18,8 +18,8 @@ class NeuralNet(nn.Module):
         self.fc1 = nn.Linear(self.input_size, self.hidden_size)
         self.relu = nn.ReLU()
         # Output layer
-        self.fc2 = nn.Linear(self.hidden_size, self.hidden_size)
-        self.fc3 = nn.Linear(self.hidden_size, number_of_classes)
+        self.fc2 = nn.Linear(self.hidden_size, 40)
+        self.fc3 = nn.Linear(40, number_of_classes)
 
     def forward(self, x):
         # l1
@@ -41,35 +41,53 @@ class NeuralNet(nn.Module):
 def run():
     data = WineData.read_data(WHITE_WINE_PATH)
     train_data, test_data = WineData.train_test_splitter(data)
+
     wd = WineData(train_data)
+    wd_test = WineData(test_data)
+
     classes = wd.number_of_classes
-    model = NeuralNet(wd.x_data.shape[1], 80, classes)
-    train_loader = DataLoader(dataset=wd, batch_size=124, shuffle=True, num_workers=2)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    model = NeuralNet(wd.x_data.shape[1], 200, classes)
+    train_loader = DataLoader(dataset=wd, batch_size=124, shuffle=True, num_workers=0)
+    test_loader = DataLoader(dataset=wd_test,batch_size=124, shuffle=True, num_workers=0)
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.001)
     criterion = torch.nn.CrossEntropyLoss()
 
-    max_epochs = 1000
+    max_epochs = 500
 
     trainer = create_supervised_trainer(model, optimizer, criterion)
     evaluator = create_supervised_evaluator(
         model, metrics={"accuracy": Accuracy(), "nll": Loss(criterion)}
     )
 
-    @trainer.on(Events.EPOCH_COMPLETED)
+    @trainer.on(Events.EPOCH_COMPLETED(every=10))
     def log_training_loss(trainer):
         print(f"Epoch[{trainer.state.epoch}] Loss:[{round(trainer.state.output,2)}]")
 
-    @trainer.on(Events.EPOCH_COMPLETED)
+    @trainer.on(Events.EPOCH_COMPLETED(every=10))
     def log_training_results(trainer):
         evaluator.run(train_loader)
         metrics = evaluator.state.metrics
         print(
-            "Training Results - Epoch: {}  Avg accuracy: {:.2f} Avg loss: {:.2f}".format(
+            "EVALUATOR: Training Results - Epoch: {}  Avg accuracy: {:.2f} Avg loss: {:.4f}".format(
                 trainer.state.epoch, metrics["accuracy"], metrics["nll"]
             )
         )
 
+    # @evaluator.on(Events.EPOCH_COMPLETED)
+    # def log_test_results(evaluator):
+    #     metrics = evaluator.state.metrics
+
+    #     print(
+    #         "EVALUATOR: Training Results - Epoch: {}  Avg accuracy: {:.2f} Avg loss: {:.4f}".format(
+    #             evaluator.state.epoch, metrics["accuracy"], metrics["nll"]
+    #         )
+    #     )
+
+
     trainer.run(train_loader, max_epochs=max_epochs)
+    evaluator.run(test_loader)
+
 
 if __name__ == "__main__":
     run()
