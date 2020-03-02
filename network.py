@@ -42,13 +42,14 @@ def run():
     data = WineData.read_data(WHITE_WINE_PATH)
     train_data, test_data = WineData.train_test_splitter(data)
     wd = WineData(train_data)
+    weights = wd.class_weights
     classes = wd.number_of_classes
-    model = NeuralNet(wd.x_data.shape[1], 80, classes)
+    model = NeuralNet(wd.x_data.shape[1], 150, classes)
     train_loader = DataLoader(dataset=wd, batch_size=124, shuffle=True, num_workers=2)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    criterion = torch.nn.CrossEntropyLoss()
+    criterion = torch.nn.CrossEntropyLoss(weight=weights)
 
-    max_epochs = 1000
+    max_epochs = 300
 
     trainer = create_supervised_trainer(model, optimizer, criterion)
     evaluator = create_supervised_evaluator(

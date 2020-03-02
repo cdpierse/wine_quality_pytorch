@@ -30,16 +30,16 @@ class WineData(Dataset):
         """
         self.data = data
         self.x_data, self.y_data = self.get_x_y(self.data)
+        self.set_class_weights()
+        print(self.class_weights)
         self.x_data, self.y_data = (
             self.df_to_torch(self.x_data),
             self.df_to_torch(self.y_data),
         )
         self.scale_x()
-
         self.x_data = self.x_data.float()
         self.offset_y()
         self.number_of_classes = len(self.y_data.unique())
-        print(self.y_data.unique())
 
     def __getitem__(self, index):
         return self.x_data[index], self.y_data[index]
@@ -55,11 +55,16 @@ class WineData(Dataset):
         """
         offset = self.y_data.min()
         self.y_data = self.y_data - offset
+    
 
     def scale_x(self):
         scaler = MinMaxScaler()
         scaler.fit(self.x_data)
         self.x_data = torch.tensor(scaler.transform(self.x_data))
+    
+    def set_class_weights(self):
+        # set class weights and order list by index low -> high
+        self.class_weights = torch.tensor((self.y_data.value_counts()/ len(self.y_data)).sort_index().values).float()
 
     @staticmethod
     def df_to_torch(df):
@@ -102,7 +107,7 @@ class WineData(Dataset):
 
 if __name__ == "__main__":
 
-    data = WineData.read_data(RED_WINE_PATH)
+    data = WineData.read_data(WHITE_WINE_PATH)
     train_data, test_data = WineData.train_test_splitter(data)
     wd = WineData(train_data)
     train_loader = DataLoader(dataset=wd, batch_size=32, shuffle=True, num_workers=2)
