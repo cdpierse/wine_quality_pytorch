@@ -18,13 +18,13 @@ class NeuralNet(nn.Module):
         self.fc1 = nn.Linear(self.input_size, self.hidden_size)
         self.relu = nn.ReLU()
         # Output layer
-        self.fc2 = nn.Linear(self.hidden_size, 40)
-        self.fc3 = nn.Linear(40, number_of_classes)
+        self.fc2 = nn.Linear(self.hidden_size, self.hidden_size)
+        self.fc3 = nn.Linear(self.hidden_size, number_of_classes)
 
     def forward(self, x):
         # l1
         x = self.fc1(x)
-        x = self.relu(x)
+        # x = self.relu(x)
 
         # # l2
         x = self.fc2(x)
@@ -34,7 +34,7 @@ class NeuralNet(nn.Module):
         x = self.fc3(x)
 
         # # output
-        x = torch.log_softmax(x, dim=1)
+        # x = torch.log_softmax(x, dim=1)
         return x
 
 
@@ -53,7 +53,7 @@ def run():
     )
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.001)
-    criterion = torch.nn.NLLLoss()
+    criterion = torch.nn.CrossEntropyLoss()
 
     max_epochs = 200
 
