@@ -32,7 +32,6 @@ class WineData(Dataset):
         self.data = data
         self.x_data, self.y_data = self.get_x_y(self.data)
         self.set_class_weights()
-        print(self.class_weights)
         self.x_data, self.y_data = (
             self.df_to_torch(self.x_data),
             self.df_to_torch(self.y_data),

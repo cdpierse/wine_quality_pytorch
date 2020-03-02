@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
-from ignite.metrics import Accuracy, Loss
+from ignite.metrics import Accuracy, Loss, Precision
 from ignite.contrib.handlers.tqdm_logger import ProgressBar
 from data_model import WineData, RED_WINE_PATH, WHITE_WINE_PATH
 from torch.utils.data import Dataset, DataLoader
@@ -11,9 +11,9 @@ class NeuralNet(nn.Module):
     def __init__(self, input_size, hidden_size, number_of_classes):
         super().__init__()
         self.input_size = input_size
+        # Setting a standard number of hidden units for each layer
         self.hidden_size = input_size
         self.number_of_classes = number_of_classes
-        print(f"number of classs is {number_of_classes}")
         # Hidden layer
         self.fc1 = nn.Linear(self.input_size, self.hidden_size)
         self.relu = nn.ReLU()
@@ -24,7 +24,7 @@ class NeuralNet(nn.Module):
     def forward(self, x):
         # l1
         x = self.fc1(x)
-        # x = self.relu(x)
+        x = self.relu(x)
 
         # # l2
         x = self.fc2(x)
@@ -37,25 +37,28 @@ class NeuralNet(nn.Module):
         # x = torch.log_softmax(x, dim=1)
         return x
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+data = WineData.read_data(WHITE_WINE_PATH)
+train_data, test_data = WineData.train_test_splitter(data)
+
+wd = WineData(train_data)
+wd_test = WineData(test_data)
+
+classes = wd.number_of_classes
+model = NeuralNet(wd.x_data.shape[1], 200, classes)
+model.to(device)
+train_loader = DataLoader(dataset=wd, batch_size=64, shuffle=True, num_workers=0)
+test_loader = DataLoader(
+    dataset=wd_test, batch_size=64, shuffle=True, num_workers=0
+)
+
 
 def run():
-    data = WineData.read_data(WHITE_WINE_PATH)
-    train_data, test_data = WineData.train_test_splitter(data)
-
-    wd = WineData(train_data)
-    wd_test = WineData(test_data)
-
-    classes = wd.number_of_classes
-    model = NeuralNet(wd.x_data.shape[1], 200, classes)
-    train_loader = DataLoader(dataset=wd, batch_size=124, shuffle=True, num_workers=0)
-    test_loader = DataLoader(
-        dataset=wd_test, batch_size=124, shuffle=True, num_workers=0
-    )
-
+    
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.001)
-    criterion = torch.nn.CrossEntropyLoss()
+    criterion = torch.nn.CrossEntropyLoss(weight=wd.class_weights)
 
-    max_epochs = 200
+    max_epochs = 1000
 
     trainer = create_supervised_trainer(model, optimizer, criterion)
     evaluator = create_supervised_evaluator(
@@ -71,8 +74,8 @@ def run():
         evaluator.run(train_loader)
         metrics = evaluator.state.metrics
         print(
-            "EVALUATOR: Training Results - Epoch: {}  Avg accuracy: {:.2f} Avg loss: {:.4f}".format(
-                trainer.state.epoch, metrics["accuracy"], metrics["nll"]
+            "EVALUATOR: Training Results - Epoch: {}  Avg accuracy: {:.2f}  Avg loss: {:.4f}".format(
+                trainer.state.epoch, metrics["accuracy"],metrics["nll"]
             )
         )
 
@@ -89,6 +92,9 @@ def run():
     trainer.run(train_loader, max_epochs=max_epochs)
    
     return model
+
+def test(model):
+    pass
 
 
 if __name__ == "__main__":

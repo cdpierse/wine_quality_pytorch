@@ -1,7 +1,3 @@
-# wine_quality_pytorch
- Wine quality prediction neural net model implemented using pytorch with shap explantion of model results. 
-
-# Explainer Exploration
 ```python
 from data_model import WineData, WHITE_WINE_PATH, RED_WINE_PATH
 from network import run
@@ -285,4 +281,3 @@ shap.summary_plot(shap_values[5][0:500], wd.x_data[:500], feature_names=FEATURE_
 ```python
 
 ```
-
