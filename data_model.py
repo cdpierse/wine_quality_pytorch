@@ -19,8 +19,7 @@ def scale_data(x):
 
 
 class WineData(Dataset):
-    
-    def __init__(self, data: pd.DataFrame):
+    def __init__(self, data: pd.DataFrame, binary: bool = False):
         """Initializes an instance of WineData dataset. 
         Data is split into x and y and then converted from 
         dataframes and series to a torch tensor. 
@@ -38,7 +37,11 @@ class WineData(Dataset):
         )
         self.scale_x()
         self.x_data = self.x_data.float()
-        self.offset_y()
+        if binary:
+            print("Binary Classification Mode selected")
+            self.y_data = torch.tensor([0 if y <= 6 else 1 for y in self.y_data])
+        else:
+            self.offset_y()
         self.number_of_classes = len(self.y_data.unique())
 
     def __getitem__(self, index):
@@ -55,16 +58,17 @@ class WineData(Dataset):
         """
         offset = self.y_data.min()
         self.y_data = self.y_data - offset
-    
 
     def scale_x(self):
         scaler = MinMaxScaler()
         scaler.fit(self.x_data)
         self.x_data = torch.tensor(scaler.transform(self.x_data))
-    
+
     def set_class_weights(self):
         # set class weights and order list by index low -> high
-        self.class_weights = torch.tensor((self.y_data.value_counts()/ len(self.y_data)).sort_index().values).float()
+        self.class_weights = torch.tensor(
+            (self.y_data.value_counts() / len(self.y_data)).sort_index().values
+        ).float()
 
     @staticmethod
     def df_to_torch(df):
@@ -108,9 +112,9 @@ class WineData(Dataset):
 if __name__ == "__main__":
     pass
 
-    # data = WineData.read_data(RED_WINE_PATH)
-    # train_data, test_data = WineData.train_test_splitter(data)
-    # wd = WineData(train_data)
+    data = WineData.read_data(RED_WINE_PATH)
+    train_data, test_data = WineData.train_test_splitter(data)
+    wd = WineData(train_data, binary=True)
     # train_loader = DataLoader(dataset=wd, batch_size=32, shuffle=True, num_workers=2)
     # epochs = 10
     # for epoch in range(epochs):
