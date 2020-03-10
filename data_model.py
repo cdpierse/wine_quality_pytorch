@@ -39,7 +39,11 @@ class WineData(Dataset):
         self.x_data = self.x_data.float()
         if binary:
             print("Binary Classification Mode selected")
-            self.y_data = torch.tensor([0 if y <= 6 else 1 for y in self.y_data])
+            binary_y = [0 if y <= 6 else 1 for y in self.y_data]
+            self.y_data = pd.Series(binary_y)
+            print(self.y_data.value_counts())
+            self.set_class_weights()
+            self.y_data = torch.tensor(self.y_data)
         else:
             self.offset_y()
         self.number_of_classes = len(self.y_data.unique())
